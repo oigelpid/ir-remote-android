@@ -1,0 +1,23 @@
+# Dependencies and build
+node_modules/
+.gradle/
+build/
+.bmad-session-stamp
+
+# Secrets and local configuration: NEVER in the repository (docs/policy/secrets.md)
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+.env
+.env.*
+!*.example
+local.properties
+keystore.properties
+signing.properties
+google-services.json
+service-account*.json
+id_rsa*
+id_ed25519*
