@@ -1,6 +1,6 @@
 ---
 status: draft
-stepsCompleted: [1, 2]
+stepsCompleted: [1, 2, 3]
 inputDocuments:
   - _bmad-output/planning-artifacts/prd.md
   - _bmad-output/planning-artifacts/architecture.md
@@ -154,27 +154,180 @@ Air conditioner remotes with persisted state, home-screen widget and quick setti
 Code learning, layout editor and contribution of codes upstream to Flipper-IRDB.
 **FRs covered:** FR16, FR17, FR18
 
-<!-- Repeat for each epic in epics_list (N = 1, 2, 3...) -->
+## Epic 1: IR engine and verified build
 
-## Epic {{N}}: {{epic_title_N}}
+Foundations that make every later epic safe: a multi-module Gradle build with dependency verification, CI with supply chain checks and an APK size budget, the `ir-core` signal model with strict validation, Pronto <-> raw conversion, and the P0 protocol encoders in four family stories with sourced test vectors. Pure JVM; no phone needed. User value: trust in the correctness of every signal the app will ever send.
 
-{{epic_goal_N}}
+### Story 1.1: Gradle skeleton and verified build
 
-<!-- Repeat for each story (M = 1, 2, 3...) within epic N -->
-
-### Story {{N}}.{{M}}: {{story_title_N_M}}
-
-As a {{user_type}},
-I want {{capability}},
-So that {{value_benefit}}.
+As a maintainer,
+I want a multi-module Gradle build where every dependency is pinned and verified,
+So that no unreviewed artifact can enter the project.
 
 **Acceptance Criteria:**
 
-<!-- for each AC on this story -->
+**Given** a clean checkout
+**When** I run `./gradlew build`
+**Then** the modules `ir-core` (pure JVM, no `android.*`) and `app` (`minSdk` 26, `targetSdk` 36) build successfully
+**And** the only plugins are AGP and the Kotlin Gradle Plugin, and the only runtime dependency is `kotlin-stdlib`.
 
-**Given** {{precondition}}
-**When** {{action}}
-**Then** {{expected_outcome}}
-**And** {{additional_criteria}}
+**Given** the Gradle wrapper
+**When** it is downloaded
+**Then** `distributionSha256Sum` is set
+**And** a checksum mismatch fails the build.
 
-<!-- End story repeat -->
+**Given** `gradle/verification-metadata.xml` with SHA-256 and PGP signatures
+**When** a dependency is added without registering it
+**Then** the build fails.
+
+**Given** the repository configuration
+**Then** only `google()` and `mavenCentral()` are declared, with `includeGroup` routing.
+
+### Story 1.2: CI with supply chain checks
+
+As a maintainer,
+I want every pull request checked automatically for secrets, vulnerable dependencies and unsafe workflows,
+So that regressions are caught before review.
+
+**Acceptance Criteria:**
+
+**Given** a pull request
+**When** CI runs
+**Then** it executes the JVM unit tests, `tools/check-no-secrets.sh` and OSV-Scanner
+**And** it fails on any finding.
+
+**Given** the workflow files
+**Then** every GitHub Action is pinned by commit SHA, `permissions: read-all` is the default, and `pull_request_target` is not used.
+
+**Given** a debug build of `app`
+**When** its APK exceeds 3 MB
+**Then** CI fails with the measured size in the message (NFR5).
+
+**Given** the repository
+**Then** a weekly OpenSSF Scorecard workflow exists.
+
+### Story 1.3: Signal model and validation
+
+As a maintainer,
+I want a canonical `IrSignal` model with strict validation,
+So that no malformed signal can ever reach a transmitter.
+
+**Acceptance Criteria:**
+
+**Given** `IrSignal(carrierHz, intro, repeat, ending, dutyCycle)` and `IrCode` (Parsed/Raw/Pronto)
+**When** a signal is built
+**Then** the model contains no `android.*` types.
+
+**Given** a signal
+**When** it is validated
+**Then** it is rejected unless all durations are > 0 and < 250 ms, the number of durations is even, and the total duration is < 2 s.
+
+**Given** a carrier frequency outside the supported ranges ±2 kHz
+**When** it is validated
+**Then** it is rejected.
+
+**Given** any rejection
+**Then** the error names the cause and a suggested action in plain language, without protocol jargon.
+
+### Story 1.4: Pronto hex and raw conversion
+
+As a maker,
+I want to convert between Pronto hex and raw durations,
+So that I can reuse codes from other tools.
+
+**Acceptance Criteria:**
+
+**Given** a Pronto code of type `0000`
+**When** it is converted to raw and back
+**Then** the result equals the original apart from carrier quantization (documented tolerance).
+
+**Given** Pronto types `5000` and `6000`
+**When** they are parsed
+**Then** they are recognized or rejected with a readable error.
+
+**Given** malformed input (odd word count, non-hex characters, length mismatch)
+**When** it is parsed
+**Then** it is rejected and no exception escapes the module.
+
+**Given** the test suite
+**Then** it includes vectors with a documented source.
+
+### Story 1.5: NEC family, Samsung32 and JVC encoders
+
+As a user with a TV or set-top box using these protocols,
+I want correct encoding of NEC, NEC2, NECx, Samsung32 and JVC,
+So that my commands do what I expect.
+
+**Acceptance Criteria:**
+
+**Given** an address and a command
+**When** they are encoded as NEC
+**Then** the durations match the reference vectors from IrScrutinizer or Flipper, with the source documented.
+
+**Given** a held key
+**When** repeats are requested
+**Then** NEC emits the repeat code, not the full frame.
+
+**Given** invalid parameters (address or command out of range)
+**When** encoding
+**Then** a readable error is returned.
+
+**Given** the protocol set
+**Then** each variant has at least one vector test and a round trip to Pronto and back.
+
+### Story 1.6: Sony SIRC encoders
+
+As a user with a Sony device,
+I want 12, 15 and 20-bit SIRC encoding,
+So that my commands are recognized.
+
+**Acceptance Criteria:**
+
+**Given** a command
+**When** it is encoded as SIRC 12, 15 or 20
+**Then** the durations match the reference vectors, with the source documented.
+
+**Given** a held key is simulated
+**Then** the frame repeats as the protocol requires (three sends, spacing per spec).
+
+**Given** an out-of-range address or command
+**When** encoding
+**Then** a readable error is returned.
+
+### Story 1.7: RC5 and RC6 encoders with toggle bit
+
+As a user with a device using Philips-family protocols,
+I want RC5 and RC6 mode 0 encoding with the toggle bit,
+So that repeated presses of the same key are recognized as separate presses.
+
+**Acceptance Criteria:**
+
+**Given** a command
+**When** it is encoded as RC5 or RC6 mode 0
+**Then** the durations match the reference vectors, with the source documented.
+
+**Given** `ProtocolEncoder.encode(code, toggle)`
+**When** it is called with `toggle` true and then false
+**Then** only the toggle bit differs.
+
+**Given** a held key
+**Then** the toggle bit stays constant across repeats and flips on the next press.
+
+### Story 1.8: Kaseikyo, Sharp and Denon encoders
+
+As a user with a Panasonic, Sharp or Denon device,
+I want these protocols encoded correctly,
+So that the P0 protocol set is complete.
+
+**Acceptance Criteria:**
+
+**Given** a command
+**When** it is encoded as Kaseikyo, Sharp or Denon
+**Then** the durations match the reference vectors, with the source documented, including the Kaseikyo vendor and parity bytes.
+
+**Given** the complete P0 set
+**Then** all encoders pass a single vector suite in CI, with the vectors listed in a README table with their source.
+
+**Given** the end of the epic
+**Then** the M0 first-half exit criterion is met: green vector tests on all P0 protocols.
+
