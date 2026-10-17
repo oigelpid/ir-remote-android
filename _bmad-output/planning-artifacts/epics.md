@@ -1,6 +1,8 @@
 ---
 status: draft
 stepsCompleted: [1, 2, 3, 4]
+revisions:
+  - "2026-10-17: applied party decisions for the 7 coverage gaps (new Story 3.9; ACs added to 1.2, 2.1, 2.3, 3.4, 3.5, 3.6, 3.8, 4.3, 4.4, 5.1, 5.6, 6.5); step 4 re-validation pending"
 inputDocuments:
   - _bmad-output/planning-artifacts/prd.md
   - _bmad-output/planning-artifacts/architecture.md
@@ -206,6 +208,11 @@ So that regressions are caught before review.
 **Given** the repository
 **Then** a weekly OpenSSF Scorecard workflow exists.
 
+**Given** a pull request
+**When** CI runs
+**Then** it checks the merged manifest against `tools/manifest-permissions.allowlist` (grep only, no dependency)
+**And** it fails on any `uses-permission` not listed and on any `uses-feature` with `required="true"`.
+
 ### Story 1.3: Signal model and validation
 
 As a maintainer,
@@ -360,6 +367,21 @@ So that I know immediately whether I can control devices.
 **Given** the screen
 **Then** it uses the color, typography and spacing tokens in light and dark themes, touch targets of at least 48 dp, a spoken description for each row, and English plus Italian strings.
 
+**Given** any Activity of the app (this story creates the foundation for all screens)
+**When** it is created
+**Then** its theme parent is `android:Theme.DeviceDefault*` with light, dark and system variants (`values-night`), colors come only from the spec tokens, and no AndroidX, Material or Compose artifact is on the runtime classpath (CI dependency check).
+
+**Given** the manifest
+**Then** `android:enableOnBackInvokedCallback="true"` is set, Back is handled with `OnBackInvokedCallback` one navigation step per press, and this story adds no permission.
+
+**Given** gesture or 3-button navigation
+**When** a screen is shown edge-to-edge
+**Then** WindowInsets (systemBars, displayCutout, IME) are applied and no control is hidden or smaller than 48 dp.
+
+**Given** the icons this story uses
+**Then** they are own XML VectorDrawables (24 dp, token tint), with no icon library and no bitmap, provenance and licence stated, each with a contentDescription or marked decorative
+**And** every later UI story adds the icons it needs under the same rule.
+
 ### Story 2.2: Manual code entry with validation preview
 
 As a maker,
@@ -394,11 +416,15 @@ So that I can see my device react.
 **Given** a valid code and an available built-in transmitter
 **When** I tap Send
 **Then** the signal is transmitted on a dedicated single-thread executor, not on the main thread
-**And** the transmission indicator blinks for 150 ms.
+**And** the transmission is signalled by `TxIndicatorView` (created in this story): a 150 ms blink.
 
 **Given** an invalid signal or an absent transmitter
 **When** I tap Send
-**Then** nothing is transmitted, the indicator turns to the error color, and the message gives the cause and an action (for example "Use an adapter").
+**Then** nothing is transmitted, the `TxIndicatorView` turns to the error color, and the message gives the cause and an action (for example "Use an adapter")
+**And** the error is announced to TalkBack on error only, and the announced text contains no host or IP of a blaster.
+
+**Given** the manifest
+**Then** it declares `TRANSMIT_IR` (normal permission, no runtime prompt) and `tools/manifest-permissions.allowlist` gains exactly that entry.
 
 **Given** the built-in transmitter
 **When** the signal frequency is not within the supported ranges ±2 kHz
@@ -434,7 +460,7 @@ So that timing errors are caught before any user sees them.
 
 ## Epic 3: My remotes: library, remote screen, import/export
 
-Users save, organize and use remotes: SQLite persistence, the Flipper `.ir` parser, import from a file, the Home screen (S2), the Remote screen (S5), repeat while a key is held, JSON backup and restore, and essential Settings (S6). Makers get value immediately from manual import. User value: a personal, offline library of working remotes that survives a phone change.
+Users save, organize and use remotes: SQLite persistence, the Flipper `.ir` parser, import from a file, the Home screen (S2), the Remote screen (S5), repeat while a key is held, JSON backup and restore, essential Settings (S6), and the read-only "Code details" view. Makers get value immediately from manual import. User value: a personal, offline library of working remotes that survives a phone change.
 
 ### Story 3.1: Local library storage
 
@@ -524,7 +550,12 @@ So that I can open the one I need quickly.
 
 **Given** saved remotes
 **When** Home (S2) is shown
-**Then** they appear as cards in a two-column grid with favorites first.
+**Then** they appear as cards in a two-column grid with favorites first
+**And** each remote is a `RemoteCardView` (type icon, name, brand, favorite star; target at least 48 dp) read by TalkBack as a single item
+**And** the add action is a `FabView` (56 dp accent circle, accessibility label required) that opens S3, or the import and manual entry flows until Story 4.4 delivers S3.
+
+**Given** left-handed layout is on (Story 3.8)
+**Then** the `FabView` moves to the bottom-left.
 
 **Given** an empty library
 **Then** the empty state "Find your remote" is shown with the actions to add or import a remote.
@@ -560,17 +591,29 @@ So that I can control it like a physical remote.
 
 **Given** a key
 **When** I tap it
-**Then** the signal is sent through the active transmitter, with a short vibration if enabled and the IR indicator shown.
+**Then** the signal is sent through the active transmitter, with a short vibration if enabled and the `TxIndicatorView` (from Story 2.3) shown.
 
 **Given** a transmitter error
-**Then** the message gives the cause and an action, and the indicator turns to the error color.
+**Then** the message gives the cause and an action, and the `TxIndicatorView` (from Story 2.3) turns to the error color.
 
-**Given** the custom views `IrKeyView`, `DpadView` and `RockerView`
+**Given** the custom views `IrKeyView` (created in this story), `DpadView` and `RockerView`
 **Then** each exposes spoken descriptions and virtual nodes for TalkBack (five for the D-pad, two for the rocker)
 **And** every target is at least 48 dp (56 dp for main keys).
 
+**Given** vibration is enabled
+**When** a key is pressed
+**Then** `HapticFeedbackConstants.VIRTUAL_KEY` is performed once per press (not on each repeat in Story 3.6) and no sound is played.
+
+**Given** font scale above 130%
+**Then** keys with a defined icon show the icon next to the label, and nothing is clipped up to 200%.
+
+**Given** left-handed layout is on (Story 3.8)
+**When** the Remote screen opens
+**Then** the Volume and Channel rockers and the collapsible-keypad toggle swap sides, the D-pad stays centered, and every target is still at least 48 dp.
+
 **Given** the screen
-**Then** it supports light, dark and system themes and EN/IT strings.
+**Then** it supports light, dark and system themes and EN/IT strings
+**And** the theme, WindowInsets and predictive back are inherited from Story 2.1 (verification, not creation).
 
 ### Story 3.6: Repeat while a key is held
 
@@ -580,7 +623,7 @@ So that I can adjust quickly like on a real remote.
 
 **Acceptance Criteria:**
 
-**Given** a repeatable key
+**Given** a repeatable key (`IrKeyView`)
 **When** I hold it
 **Then** the first signal is sent at once and repeats start after 300 ms, then every about 110 ms.
 
@@ -595,7 +638,7 @@ So that I can adjust quickly like on a real remote.
 **Then** repeating stops within one repeat interval, and a lifecycle change (screen off, app in background) also stops it.
 
 **Given** a long-press accessibility action
-**Then** repeat is also available as a spoken action for TalkBack.
+**Then** `IrKeyView` exposes repeat (after 300 ms, then about every 110 ms) as a spoken action for TalkBack.
 
 ### Story 3.7: JSON backup and restore
 
@@ -636,8 +679,46 @@ So that the app behaves the way I prefer.
 **Given** the information section
 **Then** it shows the version, the GPL license, the privacy statement (no analytics, no tracking), and links to the source and the SBOM.
 
+**Given** Settings (S6)
+**Then** a "Left-handed layout" switch (off by default) is offered, applies immediately and persists across restarts (a local boolean; no permission).
+
 **Given** a setting change
 **Then** it applies immediately and persists across restarts.
+
+**Given** the screen
+**Then** it meets the token, 48 dp, spoken-description and EN/IT string criteria.
+
+### Story 3.9: Code details
+
+As a maker or an advanced user,
+I want to see the technical data of each key in one place,
+So that I can report a bug or check a code that does not work, while the rest of the app stays free of jargon.
+
+**Acceptance Criteria:**
+
+**Given** the Remote screen (S5)
+**When** I open the overflow menu and choose "Code details"
+**Then** for each key I see, read-only: the format or protocol name (or Raw/Pronto), address, command, toggle, carrier frequency, number of durations, total duration
+**And** the catalog source name and license of the remote.
+
+**Given** a key
+**When** I choose "Copy code"
+**Then** only the Pronto/raw code text is copied, only on that explicit action.
+
+**Given** any other screen or error message
+**Then** no protocol name, address or command appears
+**And** the exception is the maker flows: Story 2.2 manual entry and Story 3.3 import preview may show carrier, number of durations and file format.
+
+**Given** Code details
+**Then** it renders only a fixed allowlist of `IrCode` fields plus the source name and license
+**And** it never shows transmitter name, host, IP, credentials, session keys, file paths, hashes, catalog URL or signature (Rule zero)
+**And** it works offline.
+
+**Given** names or values from an imported file
+**Then** they are shown as plain text only (no HTML, no links) and truncated at a length limit.
+
+**Given** an error
+**Then** Code details is never opened automatically and its content is not logged.
 
 **Given** the screen
 **Then** it meets the token, 48 dp, spoken-description and EN/IT string criteria.
@@ -719,10 +800,40 @@ So that I get the codes safely and can refresh them when I want.
 **And** a manual "Update catalog" action in Settings repeats the same download and verification path.
 
 **Given** no network
-**Then** a clear offline message offers the options that still work (local library, import).
+**Then** a clear offline message offers the options that still work (local library, import)
+**And** offline is detected from the failure of the request (5 s timeout), not from a pre-check.
 
 **Given** the network requests
 **Then** only the allowlisted catalog hosts are contacted and cleartext traffic is refused.
+
+**Given** the manifest
+**Then** it declares `INTERNET` and `tools/manifest-permissions.allowlist` gains exactly that entry
+**And** no other network permission (`ACCESS_NETWORK_STATE` included) is added.
+
+**Given** any catalog request
+**Then** it runs on the shared `netExecutor` (2 threads, bounded queue; a full queue yields a readable "busy, try again" error), created in the `app` composition root and injected as `java.util.concurrent.Executor` into `catalog` and `tx-net` (neither creates it), never on the main thread
+**And** results return via `Handler(Looper.getMainLooper())`.
+
+**Given** an `HttpURLConnection`
+**Then** connect and read timeouts are 5 s each (not a cap on total download time)
+**And** a stalled download fails with a readable cause and a "Try again" action, and the previous catalog stays in use.
+
+**Given** a redirect
+**Then** each hop must be https and on the allowlist, at most 3 hops, otherwise the download fails with a readable error.
+
+**Given** a download
+**Then** the body is streamed to a temp file in app-private storage with a hard size cap (declared size plus margin; abort beyond it)
+**And** the signature and SHA-256 are verified before any parsing or renaming into the active catalog.
+
+**Given** cancel, leaving the screen or an error
+**Then** the connection is closed within one read interval and the partial temp file is deleted.
+
+**Given** the logs
+**Then** no URL, header or response body is logged.
+
+**Given** a download is running
+**Then** S3 shows progress in MB with Cancel
+**And** when it fails by network or timeout the message states the cause, offers "Try again" plus import from file and manual code, is distinct from "Update rejected for security reasons", and no host or URL appears in shown text.
 
 ### Story 4.4: Search by type and brand
 
@@ -744,6 +855,17 @@ So that I find candidates for my device.
 
 **Given** no results
 **Then** the empty state offers other brand or type, import from a file and manual entry.
+
+**Given** the Add screen (S3)
+**When** it is shown in any state (catalog present, missing, loading, offline or no results)
+**Then** "Import from file" and "Enter code manually" are always visible as secondary actions below the brand search, each at least 48 dp with a spoken description.
+
+**Given** I choose "Import from file" or "Enter code manually"
+**Then** the flow of Story 3.3 or Story 2.2 opens respectively, works with no catalog and no network, and Back returns to S3.
+
+**Given** the import entry from S3
+**Then** it uses the same system file picker, parser path and limits as Story 3.3 (no storage permission, file <= 256 KB, <= 500 signals, <= 1024 durations, 1..250000 µs)
+**And** S3 adds no second validation path and no permission.
 
 **Given** the screen
 **Then** it meets the token, 48 dp, spoken-description and EN/IT string criteria.
@@ -837,7 +959,10 @@ So that the app is usable by everyone.
 **And** no information is conveyed by color alone.
 
 **Given** left-handed mode
-**Then** the layouts mirror correctly on the screens that define it.
+**Then** the layouts mirror correctly on the screens that define it (Story 3.4 `FabView`, Story 3.5 rockers and keypad toggle).
+
+**Given** the release build
+**Then** a CI/lint check finds no bitmap icon in `res/drawable`, the vector icon count is about 30, and every icon has a description or is marked decorative.
 
 **Given** the audit
 **Then** its findings are recorded in a report in the repository, with each finding fixed or tracked.
@@ -936,6 +1061,10 @@ So that the app is accepted on Google Play and F-Droid.
 
 **Given** the Play Data safety form
 **Then** the prepared answers state that no data is collected or shared, consistent with the manifest permissions and the code.
+
+**Given** the release manifest
+**Then** its permissions equal `tools/manifest-permissions.allowlist`
+**And** the Data safety answers are checked against that allowlist.
 
 **Given** F-Droid
 **Then** fastlane metadata (descriptions, changelog, screenshots list) is in the repository, and the build is declared reproducible.
@@ -1053,14 +1182,15 @@ So that the app can control it from my phone.
 **Then** I enter type, name and IP address, and the address is validated as a local network address.
 
 **Given** the local network permission (`ACCESS_LOCAL_NETWORK`)
-**Then** it is requested only at this moment, after a screen explaining why, and never at launch.
+**Then** it is requested only at this moment, after a screen explaining why, and never at launch
+**And** the permission enters `tools/manifest-permissions.allowlist` in this story.
 
 **Given** credentials
 **Then** they are stored only on the device, are never included in backups and never appear in logs.
 
 **Given** a connection test
 **When** I run it
-**Then** it uses the network executor with a 5 s timeout and reports success or a readable error.
+**Then** it uses the `netExecutor` injected from `app` (Story 4.3) with the 5 s connect and read timeouts, and reports success or a readable error.
 
 **Given** cleartext traffic
 **Then** it is allowed only to local network addresses.

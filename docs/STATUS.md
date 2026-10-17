@@ -30,29 +30,27 @@ From now on: work only on `claude/...` branches with pull requests; merges, tags
 | _bmad-output/planning-artifacts/ux-design-spec.md | approved |
 | _bmad-output/planning-artifacts/ux-research.md | approved |
 | _bmad-output/project-context.md | approved (rule zero, rule one) |
-| _bmad-output/planning-artifacts/epics.md | draft (8 epics, 51 stories); step 4 validation run: 7 checks open (see "In progress"); PR open |
+| _bmad-output/planning-artifacts/epics.md | draft (8 epics, 52 stories); the 7 coverage gaps are closed on branch `claude/apply-party-decisions-to-epics`; step 4 re-validation pending |
+| _bmad-output/party-mode/decisions-epics-gaps.md | decision log of the agent-team party (7 points, 5/5 consensus each) |
 | sprint-status.yaml | to create |
 
 ## Next BMAD workflow
 Finish `bmad-create-epics-and-stories` (step 4, final validation), then readiness check → `bmad-sprint-planning` → for each story, in separate chats: create-story → dev-story → code-review.
 
 ## In progress
-`bmad-create-epics-and-stories`: step 4 validation done, `epics.md` saved as draft with 7 checks open. FR coverage 18/18, no placeholders, every story has Given/When/Then ACs, no blocking forward dependency (3.4 uses a placeholder until 3.5; 4.1 only announces 4.2/4.3). Open requirement-coverage gaps:
-1. UX-DR3: Theme.DeviceDefault, edge-to-edge with WindowInsets, predictive back and own vector icons are in no story AC.
-2. UX-DR12: `RemoteCardView` and `FabView` are not named in Story 3.4.
-3. UX-DR14: left-handed mode is only audited (Story 5.1), implemented nowhere; `VIRTUAL_KEY` haptics and labels-to-icons above 130% are not explicit.
-4. AR11: manifest permissions (`TRANSMIT_IR`, `INTERNET`, `uses-feature consumerir required=false`) are in no AC.
-5. AR10: Story 4.3 (index download) lacks the network executor, 5 s timeout and `INTERNET` criteria.
-6. UX-DR15: the "Code details" view (the only place for technical terms) is in no story.
-7. UX-DR7: S3 "Import from file" and "Enter code manually" entries are only in the empty state of Story 4.4.
+`bmad-create-epics-and-stories`: the 7 requirement-coverage gaps found by the step 4 validation were resolved by an agent-team party (Winston, Sally, John, Amelia, Vex; qualified majority 4 of 5; every point closed 5/5, no dissent) and applied to `epics.md` (see `_bmad-output/party-mode/decisions-epics-gaps.md`). Remaining: re-run the step 4 validation on the updated file, then the readiness check and `bmad-sprint-planning`. Open notes from the party:
+1. Winston's haptics clause (`VIRTUAL_KEY` once per press, not on each repeat) was applied; confirm it.
+2. `allowBackup` is not mentioned in `architecture.md`; decide whether to add it.
+3. New story 3.9 "Code details" can be deferred if the budget tightens.
 
 ## Open branches
-- `claude/create-epics-and-stories`: `epics.md` and the party mode memory log.
+- `claude/apply-party-decisions-to-epics`: epics.md updated with the party decisions, decision log, STATUS update. Not pushed.
 
 ## Decisions taken in this workflow
 - Epic structure approved: 8 epics (engine, first transmission, library, catalog, release, external transmitters, AC/widget/second source, power-user tools).
 - Story structure decided by the BMAD party mode table by qualified majority (4 of 5). Deadlock on Epic 7 widget and quick settings tile (3 to 2): kept as two stories.
 - Weekly automatic catalog update moved from Epic 4 to Epic 7 (Story 7.6).
+- Epics gaps resolved by the agent-team party (2026-10-17): one new story (3.9 Code details); theme, insets, predictive back and icons in Story 2.1; permissions declared by the first story that uses them with a CI manifest allowlist (Story 1.2); network rules in Story 4.3; left-handed layout kept in v1 (Story 3.8).
 - Story 2.4 (bench test) is non-blocking for Epic 2 but mandatory before the first alpha.
 
 ## Log
@@ -65,3 +63,4 @@ Finish `bmad-create-epics-and-stories` (step 4, final validation), then readines
 | 2026-10-17 | `bmad-create-epics-and-stories` steps 1 to 3 | done on branch; step 4 pending |
 | 2026-10-17 | Project documentation moved into the repo (`docs/`) | merged (PR 1); Project documents deleted |
 | 2026-10-17 | `bmad-create-epics-and-stories` step 4 validation | draft saved, 7 checks open |
+| 2026-10-17 | Party (agent team) on the 7 epics.md gaps | done, 5/5 consensus each; applied to epics.md on branch |
