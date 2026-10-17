@@ -642,3 +642,173 @@ So that the app behaves the way I prefer.
 **Given** the screen
 **Then** it meets the token, 48 dp, spoken-description and EN/IT string criteria.
 
+## Epic 4: Find my remote from the catalog
+
+Users find a working code without knowing protocols: the signed catalog index (user-side setup, CI pipeline, in-app download and verification), search by type and brand (S3), candidate ranking, the guided trial (S4) saving into the library, and exits when nothing matches. User value: pick a brand, try a few codes, and end up with a working remote. Exit: five users find their TV without help (M1).
+
+### Story 4.1: Catalog setup checklist (maintainer actions)
+
+As a maintainer,
+I want a checklist of the steps only I can perform for the catalog,
+So that the signing trust anchor never passes through the sandbox.
+
+**Acceptance Criteria:**
+
+**Given** the checklist document in the repository
+**Then** it lists the maintainer-only steps: create the public `ir-index` repository, enable secret scanning and push protection on it, generate the ECDSA P-256 signing key pair and a backup pair offline, and record the two public keys for the APK.
+
+**Given** the signing private keys
+**Then** they are never stored in any repository, the Project, artifacts, CI logs or this sandbox (rule zero)
+**And** the checklist states how they are stored and backed up by the maintainer.
+
+**Given** the steps are completed
+**Then** the maintainer records the public keys and the `ir-index` repository location in the repository documentation, and the story is closed by the maintainer.
+
+**Given** this story is not yet completed
+**Then** Stories 4.2 and 4.3 can proceed with a dummy development key (see Story 4.2).
+
+### Story 4.2: Catalog pipeline and signed index
+
+As a maintainer,
+I want a CI pipeline that builds a signed catalog index from pinned upstream commits,
+So that the app can trust what it downloads.
+
+**Acceptance Criteria:**
+
+**Given** pinned commits of Flipper-IRDB
+**When** the weekly pipeline runs in the `ir-index` repository
+**Then** it produces a compressed JSON index with a SHA-256 for each file and an ECDSA P-256 signature over the index.
+
+**Given** upstream content
+**Then** it is treated as hostile input: parsed with the limits from Story 3.2, with names kept as plain text, and a file that fails parsing is excluded and reported in the build log.
+
+**Given** a development environment without the real key
+**When** a test index is needed
+**Then** the test harness generates a throwaway key pair at test time, signs a test index with it, and the dummy private key is never committed.
+
+**Given** a release build
+**Then** it rejects any index signed with a development key
+**And** a CI check fails if a development public key is present in release resources.
+
+**Given** the pipeline definition
+**Then** every action is pinned by SHA and runs with minimal permissions.
+
+### Story 4.3: Index download, verification and manual update
+
+As a user,
+I want the app to download and verify the catalog, and let me update it,
+So that I get the codes safely and can refresh them when I want.
+
+**Acceptance Criteria:**
+
+**Given** the first search without a local catalog
+**When** I accept the download
+**Then** the app shows the size in MB and a cancel action before downloading
+**And** it requires no permission other than network access.
+
+**Given** a downloaded index
+**When** it is verified
+**Then** the signature is checked with the public keys in the APK (primary and backup) and each file is checked against its SHA-256 before use.
+
+**Given** a signature or hash that does not verify
+**Then** the update is rejected with the message "Update rejected for security reasons"
+**And** the previous catalog stays in use.
+
+**Given** a verified index
+**Then** it is stored in the app-private storage and works offline afterwards
+**And** a manual "Update catalog" action in Settings repeats the same download and verification path.
+
+**Given** no network
+**Then** a clear offline message offers the options that still work (local library, import).
+
+**Given** the network requests
+**Then** only the allowlisted catalog hosts are contacted and cleartext traffic is refused.
+
+### Story 4.4: Search by type and brand
+
+As a user,
+I want to search the catalog by device type and brand,
+So that I find candidates for my device.
+
+**Acceptance Criteria:**
+
+**Given** the Add screen (S3)
+**Then** it shows a grid of device types (TV, Air conditioner, Set-top box, Projector, Audio, Fan, LED lights, Other), a brand search box with suggestions, and common brands first.
+
+**Given** a type and a brand, or a partial brand name
+**When** I search
+**Then** results appear within 2 s using the local full-text index (SQLite FTS4) with brand synonyms.
+
+**Given** the catalog is missing
+**Then** a banner states the size in MB and offers the download from Story 4.3.
+
+**Given** no results
+**Then** the empty state offers other brand or type, import from a file and manual entry.
+
+**Given** the screen
+**Then** it meets the token, 48 dp, spoken-description and EN/IT string criteria.
+
+### Story 4.5: Candidate ranking
+
+As a user,
+I want the most likely codes tried first,
+So that I find my remote with as few attempts as possible.
+
+**Acceptance Criteria:**
+
+**Given** a set of matching remotes for a type and brand
+**When** candidates are ranked
+**Then** the order is deterministic and documented (for example by protocol popularity and model-name match)
+**And** duplicates with identical signals are merged into one candidate.
+
+**Given** the ranking logic
+**Then** it is pure code with its own fixtures and ordering tests, independent of the user interface.
+
+**Given** a corpus snapshot
+**Then** a test verifies that the known popular models for a sample of brands appear within the first candidates.
+
+### Story 4.6: Guided trial
+
+As a user,
+I want to try candidates one by one with a single large key,
+So that I can find the right code without knowing anything technical.
+
+**Acceptance Criteria:**
+
+**Given** a ranked list
+**When** the guided trial (S4) starts
+**Then** it shows "Brand Type · candidate N of M", a large test key (Power, or Volume up for devices that must not be turned off) and a send-again link.
+
+**Given** a candidate
+**When** I tap "It worked"
+**Then** a second key is tried to confirm, a name is suggested, and the remote is saved to the library and opened on S5.
+
+**Given** a candidate
+**When** I tap "Nothing, try the next one"
+**Then** the next candidate is loaded in at most three taps per candidate in total.
+
+**Given** a transmitter error or absent transmitter
+**Then** the message gives the cause and an action, and no candidate is skipped silently.
+
+**Given** the screen
+**Then** it meets the token, 48 dp, spoken-description and EN/IT string criteria.
+
+### Story 4.7: Exits when no candidate works
+
+As a user,
+I want clear options when nothing worked,
+So that I am not stuck.
+
+**Acceptance Criteria:**
+
+**Given** the candidates are exhausted
+**Then** the screen offers: try another brand or type, import from a file, and report a missing brand.
+
+**Given** I choose to report a missing brand
+**Then** a prefilled issue is shown in full before anything is sent
+**And** nothing is sent without my explicit confirmation
+**And** it contains no personal or device identifying data.
+
+**Given** the options
+**Then** each leads to an existing flow (Story 4.4, Story 3.3) without a dead end.
+
