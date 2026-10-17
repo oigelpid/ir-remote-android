@@ -331,3 +331,104 @@ So that the P0 protocol set is complete.
 **Given** the end of the epic
 **Then** the M0 first-half exit criterion is met: green vector tests on all P0 protocols.
 
+## Epic 2: First transmission on the phone
+
+The engine meets real hardware: transmitter detection with the S1 Welcome screen, a reusable manual code entry screen with validation preview, sending a validated code from the built-in transmitter, and an on-device bench test against a receiver. User value: the first time the app actually controls a device, with honest feedback when it cannot.
+
+### Story 2.1: Welcome screen with transmitter detection
+
+As a new user,
+I want to see which transmitters my phone has and why,
+So that I know immediately whether I can control devices.
+
+**Acceptance Criteria:**
+
+**Given** the app is launched for the first time
+**When** the Welcome screen (S1) is shown
+**Then** it lists one row per transmitter kind with status (available / absent / to be configured)
+**And** the built-in row shows the supported carrier frequencies read from the system
+**And** no permission is requested.
+
+**Given** the phone has no IR emitter
+**When** S1 is shown
+**Then** a plain-language message offers "Use an adapter" and "Explore anyway".
+
+**Given** the `tx-builtin` module
+**Then** it implements the `IrTransmitter` interface (id, kind, capabilities) and `ir-core` does not depend on it
+**And** the manifest declares `uses-feature consumerir` with `required="false"`.
+
+**Given** the screen
+**Then** it uses the color, typography and spacing tokens in light and dark themes, touch targets of at least 48 dp, a spoken description for each row, and English plus Italian strings.
+
+### Story 2.2: Manual code entry with validation preview
+
+As a maker,
+I want to type or paste a raw or Pronto code and see whether it is valid,
+So that I can check a code before sending it.
+
+**Acceptance Criteria:**
+
+**Given** the manual entry screen
+**When** I paste a valid raw or Pronto code
+**Then** the screen shows that it is valid, the number of durations, the carrier frequency and the total duration.
+
+**Given** an invalid code (odd number of durations, a duration out of range, total over 2 s, non-hex Pronto)
+**When** I submit it
+**Then** the screen shows the cause and a suggested action in plain language, with no stack trace or protocol jargon.
+
+**Given** empty input
+**Then** the submit action is disabled and a hint is shown.
+
+**Given** the screen
+**Then** it is a self-contained component that other flows can open and receive the parsed `IrCode` from (reused as "Enter code manually" in Epic 3)
+**And** it meets the same token, 48 dp, spoken-description and EN/IT string criteria as Story 2.1.
+
+### Story 2.3: Send a validated code from the built-in transmitter
+
+As a user,
+I want to send the code I entered from my phone's IR emitter,
+So that I can see my device react.
+
+**Acceptance Criteria:**
+
+**Given** a valid code and an available built-in transmitter
+**When** I tap Send
+**Then** the signal is transmitted on a dedicated single-thread executor, not on the main thread
+**And** the transmission indicator blinks for 150 ms.
+
+**Given** an invalid signal or an absent transmitter
+**When** I tap Send
+**Then** nothing is transmitted, the indicator turns to the error color, and the message gives the cause and an action (for example "Use an adapter").
+
+**Given** the built-in transmitter
+**When** the signal frequency is not within the supported ranges ±2 kHz
+**Then** it is rejected before reaching the system service.
+
+**Given** a mid-range device
+**When** latency from tap to the start of transmission is measured with the documented method
+**Then** it is below 50 ms (NFR5).
+
+### Story 2.4: On-device bench test against a receiver
+
+As a maintainer,
+I want to compare what the phone really transmits with what the encoders intend,
+So that timing errors are caught before any user sees them.
+
+**Acceptance Criteria:**
+
+**Given** a debug-only tool (not included in the release APK)
+**When** it is run with a connected receiver
+**Then** it transmits one vector for each P0 protocol family from Epic 1.
+
+**Given** the receiver capture
+**When** the measured timings are compared with the expected ones
+**Then** each vector passes or fails against a documented tolerance
+**And** the result is written to a report file in the repository.
+
+**Given** the receiver hardware is not available
+**Then** this story is marked non-blocking for the closure of Epic 2
+**And** it is a mandatory gate before the first alpha release.
+
+**Given** the procedure
+**Then** it documents the receiver options (ESP with TSOP/VS1838, Flipper Zero, or a learning dongle) and the steps to reproduce.
+
