@@ -946,3 +946,389 @@ So that the app is accepted on Google Play and F-Droid.
 **Given** the license information
 **Then** the GPL-3.0-or-later notice and the irdb or Flipper-IRDB attributions required by the catalog sources are present in the About section.
 
+## Epic 6: External transmitters (v1.1)
+
+Users without a built-in emitter, or who prefer another one, can still send codes: the Transmitters screen (S7) with selection and fallback, then one independent, separately shippable story per transmitter (audio jack, each USB dongle, and the network blasters on top of a shared add flow). USB and Broadlink stories require real hardware to verify. User value: the remote works on any phone, with or without an IR emitter.
+
+### Story 6.1: Transmitters screen, selection and fallback
+
+As a user,
+I want to see my transmitters and choose which one each remote uses,
+So that commands always go through a working path.
+
+**Acceptance Criteria:**
+
+**Given** the Transmitters screen (S7)
+**Then** it lists every transmitter with its status and, where relevant, its frequencies.
+
+**Given** a remote
+**When** I change its transmitter
+**Then** the choice is saved for that remote.
+
+**Given** the chosen transmitter is unavailable
+**When** I send a key
+**Then** the app falls back to the next available transmitter and tells me which one was used, or shows a banner with "Use phone IR" when none works.
+
+**Given** the `transmitter` table
+**Then** it stores configuration only and never session keys or passwords in clear text.
+
+**Given** the screen
+**Then** it meets the token, 48 dp, spoken-description and EN/IT string criteria.
+
+### Story 6.2: Audio jack transmitter
+
+As a user with an IR audio-jack adapter,
+I want to send codes through the headphone output,
+So that I can control devices without a built-in emitter.
+
+**Acceptance Criteria:**
+
+**Given** the audio transmitter module (`tx-audio`, depending only on `ir-core`)
+**When** a signal is sent
+**Then** it is rendered as 16-bit PCM at 48 kHz in antiphase on the two channels.
+
+**Given** the audio settings in S7
+**Then** I can choose mono or stereo, run a test signal and calibrate the volume manually.
+
+**Given** no headset connected
+**Then** the message says so and suggests the adapter.
+
+**Given** a real adapter
+**Then** a 38 kHz carrier is verified with the bench procedure from Story 2.4, and the result is recorded.
+
+### Story 6.3: Tiqiaa USB dongle
+
+As a user with a Tiqiaa dongle,
+I want to send codes through it,
+So that I can control devices from my phone.
+
+**Acceptance Criteria:**
+
+**Given** a Tiqiaa dongle (10C4:8468) is connected
+**When** I grant access in the system USB dialog
+**Then** the app detects it and shows it in S7.
+
+**Given** a signal
+**When** it is sent
+**Then** it is converted to the dongle's format and written over bulk transfer on a dedicated executor, with failures reported with a cause and an action.
+
+**Given** the dongle is unplugged during use
+**Then** the transmitter becomes unavailable and fallback applies.
+
+**Given** the story
+**Then** it is marked "verify on real hardware" and records the verification result.
+
+### Story 6.4: ElkSmart USB dongle
+
+As a user with an ElkSmart dongle,
+I want to send codes through it,
+So that I can control devices from my phone.
+
+**Acceptance Criteria:**
+
+**Given** an ElkSmart dongle (045C:02AA) is connected
+**When** I grant access in the system USB dialog
+**Then** the app detects it and shows it in S7.
+
+**Given** a signal
+**When** it is sent
+**Then** it is converted to the dongle's format and written over bulk transfer, with failures reported with a cause and an action.
+
+**Given** the dongle is unplugged during use
+**Then** fallback applies.
+
+**Given** the story
+**Then** it is independent of Story 6.3 and records its own real-hardware verification.
+
+### Story 6.5: Add a network blaster
+
+As a user,
+I want to add a network IR blaster by its address,
+So that the app can control it from my phone.
+
+**Acceptance Criteria:**
+
+**Given** the add flow in S7
+**When** I choose to add a blaster
+**Then** I enter type, name and IP address, and the address is validated as a local network address.
+
+**Given** the local network permission (`ACCESS_LOCAL_NETWORK`)
+**Then** it is requested only at this moment, after a screen explaining why, and never at launch.
+
+**Given** credentials
+**Then** they are stored only on the device, are never included in backups and never appear in logs.
+
+**Given** a connection test
+**When** I run it
+**Then** it uses the network executor with a 5 s timeout and reports success or a readable error.
+
+**Given** cleartext traffic
+**Then** it is allowed only to local network addresses.
+
+### Story 6.6: Tasmota blaster
+
+As a user with a Tasmota IR blaster,
+I want to send codes through it,
+So that I can control devices from anywhere in my home network.
+
+**Acceptance Criteria:**
+
+**Given** a blaster added with Story 6.5
+**When** a signal is sent
+**Then** it is sent as raw durations over HTTP, within the timeout, and the result is shown.
+
+**Given** a network error or an unexpected reply
+**Then** the message gives the cause and an action, and fallback applies.
+
+**Given** the story
+**Then** it is marked "verify on real hardware" and records the verification result.
+
+### Story 6.7: ESPHome blaster
+
+As a user with an ESPHome IR blaster,
+I want to send codes through it,
+So that I can reuse my existing setup.
+
+**Acceptance Criteria:**
+
+**Given** a blaster added with Story 6.5
+**When** a signal is sent
+**Then** it is sent as Pronto to the documented `web_server` action of the reference firmware.
+
+**Given** the reference firmware
+**Then** a sample configuration is documented in the repository.
+
+**Given** a network error or an unexpected reply
+**Then** the message gives the cause and an action.
+
+### Story 6.8: Broadlink blaster
+
+As a user with a Broadlink blaster,
+I want to send codes through it,
+So that I can control devices without extra hardware.
+
+**Acceptance Criteria:**
+
+**Given** a blaster added with Story 6.5
+**When** it is first used
+**Then** the app authenticates over UDP and keeps the session key in memory only, never persisted.
+
+**Given** a signal
+**When** it is sent
+**Then** it is converted to a Broadlink packet with AES-128-CBC encryption, and the time unit is fixed by tests on a real RM4.
+
+**Given** discovery
+**Then** there is no automatic discovery in v1: devices are added manually.
+
+**Given** the story
+**Then** it is marked "verify on real hardware" and records the verification result.
+
+## Epic 7: Air conditioners, widget and second source (v1.1)
+
+Air conditioner remotes with persisted state, a home-screen widget and a quick settings tile, a second catalog source (irdb) with attribution, and the weekly automatic catalog update deferred from Epic 4. User value: control stateful devices, send a key without opening the app, and find more remotes.
+
+### Story 7.1: Second catalog source (irdb)
+
+As a user,
+I want a second source of remotes,
+So that I find devices missing from the first catalog.
+
+**Acceptance Criteria:**
+
+**Given** the catalog pipeline from Story 4.2
+**When** the irdb source is added
+**Then** its CSV data is parsed with the same hostile-input limits and included in the signed index with its own source marker.
+
+**Given** the source selection in Settings
+**Then** irdb is optional, shows its license warning, and can be turned off.
+
+**Given** irdb content in the app
+**Then** an attribution notice is visible in About and in the source sheet.
+
+**Given** a search
+**Then** results show their source and duplicates across sources are merged.
+
+### Story 7.2: Air conditioner state model and profiles
+
+As a user with an air conditioner,
+I want the app to understand AC profiles and remember the state,
+So that each command carries the complete state the unit expects.
+
+**Acceptance Criteria:**
+
+**Given** a SmartIR JSON or Flipper AC profile
+**When** it is parsed
+**Then** the app builds a model of modes, fan speeds, temperature range and the matching signals.
+
+**Given** a state change (power, mode, fan, temperature)
+**Then** the full state is encoded into the signal and saved in the `ac_state` table.
+
+**Given** an invalid or unsupported profile
+**Then** it is rejected with a readable error and no exception escapes.
+
+**Given** the module
+**Then** it is pure JVM logic with fixtures and tests, independent of the user interface.
+
+### Story 7.3: Air conditioner remote screen
+
+As a user with an air conditioner,
+I want a screen that shows temperature, mode and fan,
+So that I can control it as I would the physical remote.
+
+**Acceptance Criteria:**
+
+**Given** a remote with an AC profile
+**When** S5 opens
+**Then** the AC variant shows a large temperature, plus and minus controls, mode and fan chips and a Power key.
+
+**Given** any change
+**Then** the full state is sent and the display reflects the saved state after a restart.
+
+**Given** a transmission error
+**Then** the message gives the cause and an action, and the displayed state is not changed.
+
+**Given** the screen
+**Then** it meets the token, 48 dp, spoken-description and EN/IT string criteria.
+
+### Story 7.4: Home-screen widget
+
+As a user,
+I want a widget that sends a key from my home screen,
+So that I do not have to open the app.
+
+**Acceptance Criteria:**
+
+**Given** a saved remote
+**When** I add the widget and choose a remote and a key
+**Then** tapping it sends the key through the remote's transmitter without opening the app.
+
+**Given** the remote or key no longer exists
+**Then** the widget shows a clear state and does nothing when tapped.
+
+**Given** the widget
+**Then** it has a spoken description, a 48 dp minimum target and EN/IT labels.
+
+### Story 7.5: Quick settings tile
+
+As a user,
+I want a quick settings tile that sends a key,
+So that I can use it from the notification shade.
+
+**Acceptance Criteria:**
+
+**Given** the tile is added
+**When** I choose a remote and a key
+**Then** tapping the tile sends the key without opening the app.
+
+**Given** an error
+**Then** the tile shows an error state and a tap opens the Remote screen.
+
+**Given** the tile
+**Then** it has a spoken label and EN/IT strings.
+
+### Story 7.6: Weekly automatic catalog update
+
+As a user,
+I want the catalog to refresh itself,
+So that I do not use stale remotes.
+
+**Acceptance Criteria:**
+
+**Given** the setting is enabled
+**Then** a weekly job (JobScheduler) runs only on an unmetered network and uses the same download and verification path as Story 4.3.
+
+**Given** a failed verification
+**Then** the previous catalog stays in use and the failure is shown the next time I open the catalog settings.
+
+**Given** the setting is disabled
+**Then** no background work is scheduled.
+
+**Given** the job
+**Then** it has its own tests for scheduling and failure behavior.
+
+## Epic 8: Power-user tools (P2)
+
+Code learning from remotes the catalog does not know, a layout editor to arrange buttons, and a way to contribute codes upstream. User value: full control for makers and a way to give back to the community catalog.
+
+### Story 8.1: Learn a code with a USB dongle
+
+As a maker,
+I want to capture a code from my physical remote with a USB dongle,
+So that I can use devices missing from the catalog.
+
+**Acceptance Criteria:**
+
+**Given** a supported dongle with learning capability
+**When** I start learning and press a key on the physical remote
+**Then** the captured signal is displayed with its durations and carrier frequency.
+
+**Given** a captured signal
+**Then** I can replay it, name it and save it to a remote.
+
+**Given** no signal is received within a timeout
+**Then** the message says so and suggests a retry.
+
+**Given** the story
+**Then** it records real-hardware verification.
+
+### Story 8.2: Learn a code with Broadlink
+
+As a maker,
+I want to capture a code through a Broadlink device,
+So that I can use devices missing from the catalog.
+
+**Acceptance Criteria:**
+
+**Given** a Broadlink blaster added in Epic 6
+**When** I start learning and press a key on the physical remote
+**Then** the captured signal is decoded and displayed.
+
+**Given** a captured signal
+**Then** I can replay it, name it and save it.
+
+**Given** a timeout or an error
+**Then** the message gives the cause and an action, and the session key stays in memory only.
+
+**Given** the story
+**Then** it records real-hardware verification.
+
+### Story 8.3: Layout editor
+
+As a user,
+I want to arrange, rename and resize the buttons of a remote,
+So that it looks the way I use it.
+
+**Acceptance Criteria:**
+
+**Given** a remote
+**When** I enter edit mode
+**Then** I can move, rename and resize buttons, and add or remove buttons for saved codes.
+
+**Given** an edit
+**When** I leave edit mode
+**Then** the layout is saved and shown the same after a restart.
+
+**Given** a destructive change (removing a button)
+**Then** an undo action is available.
+
+**Given** the editor
+**Then** every action is available to TalkBack users, targets are at least 48 dp and strings exist in EN and IT.
+
+### Story 8.4: Export a remote for contribution
+
+As a maker,
+I want to export my remote as a file the community catalog accepts,
+So that I can contribute it upstream.
+
+**Acceptance Criteria:**
+
+**Given** a saved remote
+**When** I choose to export for contribution
+**Then** a `.ir` file is produced following the conventions of the Flipper-IRDB repository.
+
+**Given** the file
+**Then** it contains no personal data and only the device and codes.
+
+**Given** the export
+**Then** nothing is uploaded automatically: I get the file and the instructions to open a pull request.
+
