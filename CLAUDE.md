@@ -26,7 +26,7 @@ BMAD roles drive the process; the subagents in `.claude/agents/` do the work ins
 | Code review (`bmad-code-review`) | `code-reviewer` with clean context, a different model from the author |
 | Release | `release-engineer` (prepares, does not sign or publish) |
 
-Full rules on complexity scale, orchestration patterns and guardrails: project document `claude/agents-and-orchestration.md` (Project "ir app android").
+Full rules on complexity scale, orchestration patterns and guardrails: `docs/agents-and-orchestration.md`. Session protocol: `docs/bmad-sessions.md`. Current status and pending work: `docs/STATUS.md`. Document index: `docs/project-index.md`.
 
 ## Quick rules
 - **Rule zero: no secrets or sensitive data** in the repo, the Project, artifacts, commits, issues or logs (keys, keystores, tokens, passwords, `.env`, `local.properties`, `google-services.json`, emails, home network data). Mandatory check `bash tools/check-no-secrets.sh` before every commit and every save to the Project; commit author uses the GitHub noreply email. Policy: `docs/policy/secrets.md`. Overrides everything.
