@@ -812,3 +812,137 @@ So that I am not stuck.
 **Given** the options
 **Then** each leads to an existing flow (Story 4.4, Story 3.3) without a dead end.
 
+## Epic 5: Release v1.0 (Play + F-Droid)
+
+Verification and release only: accessibility, tokens and strings are already acceptance criteria of every UI story. This epic proves them on a real device, measures the quality thresholds, makes the build reproducible and prepares the release artifacts and store compliance. Real signing, tagging and publishing are done by the maintainer and never by the sandbox or by agents. Exit: Data safety approved, reproducible build verified (M2).
+
+### Story 5.1: Accessibility audit
+
+As a user who relies on accessibility features,
+I want every screen verified with TalkBack, large text and sufficient contrast,
+So that the app is usable by everyone.
+
+**Acceptance Criteria:**
+
+**Given** every screen (S1 to S7 that exist at this point)
+**When** it is navigated with TalkBack
+**Then** every control has a spoken label, focus order is logical, and custom views expose their virtual nodes and actions.
+
+**Given** system text size set to 200%
+**Then** no text is clipped and no action becomes unreachable
+**And** above 130% labels are accompanied by icons where specified.
+
+**Given** the color tokens in light and dark themes
+**Then** every text and background pair reaches at least 4.5:1 contrast
+**And** no information is conveyed by color alone.
+
+**Given** left-handed mode
+**Then** the layouts mirror correctly on the screens that define it.
+
+**Given** the audit
+**Then** its findings are recorded in a report in the repository, with each finding fixed or tracked.
+
+### Story 5.2: Translation completeness check
+
+As a maintainer,
+I want an automated check that all strings exist in English and Italian,
+So that no release ships with missing or hardcoded text.
+
+**Acceptance Criteria:**
+
+**Given** `values/strings.xml` and `values-it/strings.xml`
+**When** CI runs the check
+**Then** it fails if any string exists in one file and not the other.
+
+**Given** the layouts and code
+**Then** the check fails on user-visible hardcoded strings.
+
+**Given** a placeholder or plural in a string
+**Then** the check verifies that the Italian version uses the same placeholders.
+
+**Given** a release candidate
+**Then** a manual pass confirms the Italian text reads naturally and is recorded in the audit report.
+
+### Story 5.3: Quality thresholds measured
+
+As a maintainer,
+I want the performance thresholds measured on a real device,
+So that the release meets its promises.
+
+**Acceptance Criteria:**
+
+**Given** a mid-range 2021 device or equivalent
+**When** the app is cold-started with the documented protocol
+**Then** the median start time over a stated number of runs is below 500 ms.
+
+**Given** the release APK
+**Then** its size is below 3 MB, enforced by the CI check from Story 1.2.
+
+**Given** the built-in transmitter
+**When** tap-to-transmit latency is measured with the protocol from Story 2.3
+**Then** it is below 50 ms.
+
+**Given** a measurement misses its threshold
+**Then** the result is recorded with the device model and a tracked issue, and the release is not tagged until resolved or the threshold is formally revised.
+
+### Story 5.4: Reproducible build
+
+As a maintainer,
+I want the same source to produce the same APK every time,
+So that anyone, including F-Droid, can verify the published binary.
+
+**Acceptance Criteria:**
+
+**Given** a tagged commit
+**When** it is built twice in a clean container with a pinned toolchain and `SOURCE_DATE_EPOCH`
+**Then** the two APKs are byte-identical before signing.
+
+**Given** the build container definition
+**Then** the base image and tools are pinned by digest or checksum.
+
+**Given** the comparison
+**Then** a script reports the first differing entry when the builds differ, and the release is blocked until fixed.
+
+**Given** the build documentation
+**Then** it describes how an outside party reproduces the build.
+
+### Story 5.5: Release artifacts
+
+As a maintainer,
+I want the release artifacts prepared consistently,
+So that I can sign and publish with confidence.
+
+**Acceptance Criteria:**
+
+**Given** a successful reproducible build
+**Then** a CycloneDX SBOM and SHA-256 checksums for every artifact are generated.
+
+**Given** the release notes
+**Then** they are written in English and list user-visible changes and known issues.
+
+**Given** signing and tagging
+**Then** the story delivers step-by-step instructions for the maintainer (GPG-signed tag, Play App Signing upload, APK signing) and performs none of them itself.
+
+**Given** the release workflow
+**Then** it runs with minimal permissions, uses pinned actions and has no access to signing keys.
+
+### Story 5.6: Store compliance
+
+As a maintainer,
+I want the store metadata and privacy declarations ready,
+So that the app is accepted on Google Play and F-Droid.
+
+**Acceptance Criteria:**
+
+**Given** the Play Data safety form
+**Then** the prepared answers state that no data is collected or shared, consistent with the manifest permissions and the code.
+
+**Given** F-Droid
+**Then** fastlane metadata (descriptions, changelog, screenshots list) is in the repository, and the build is declared reproducible.
+
+**Given** the privacy statement
+**Then** it is available in the app (Settings) and in the repository, in English and Italian.
+
+**Given** the license information
+**Then** the GPL-3.0-or-later notice and the irdb or Flipper-IRDB attributions required by the catalog sources are present in the About section.
+
