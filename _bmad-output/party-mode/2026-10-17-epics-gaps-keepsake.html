@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Round Table - epics.md gaps</title>
+<style>
+:root{--bg:#f6f1e7;--surface:#fffdf8;--text:#1f2430;--muted:#5d6472;--line:#ddd3bf;--accent:#b4531f;--ok:#2d7a4f;
+--c1:#3f6fb5;--c2:#c2528a;--c3:#8a6a1f;--c4:#2f8a7a;--c5:#8b3fb5;--table:#a8743d;--tableh:#8a5a2b}
+@media (prefers-color-scheme:dark){:root{--bg:#161a22;--surface:#1f2530;--text:#ecebe6;--muted:#a0a7b4;--line:#323a49;--accent:#f09a64;--ok:#6fcf97;
+--c1:#8fb4ee;--c2:#f08cbf;--c3:#e3c26a;--c4:#7ad6c4;--c5:#cf9ff0;--table:#6b4a2a;--tableh:#85602f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:980px;margin:0 auto;padding:24px 16px 64px}
+header{text-align:center;padding:24px 0 8px}
+h1{font-size:clamp(28px,5vw,44px);margin:0 0 6px;letter-spacing:-.5px}
+.sub{color:var(--muted);margin:0}
+.stats{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:20px 0}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 18px;text-align:center;min-width:120px}
+.stat b{display:block;font-size:28px;color:var(--accent)}
+.stat span{font-size:13px;color:var(--muted)}
+svg.table{display:block;margin:8px auto 0;max-width:100%;height:auto}
+.seat{animation:bob 4s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.seat:nth-of-type(2){animation-delay:.6s}.seat:nth-of-type(3){animation-delay:1.2s}
+.seat:nth-of-type(4){animation-delay:1.8s}.seat:nth-of-type(5){animation-delay:2.4s}
+@keyframes bob{50%{transform:translateY(-4px)}}
+@media (prefers-reduced-motion:reduce){.seat,.spark{animation:none}}
+.spark{animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+h2{font-size:24px;margin:40px 0 12px;border-bottom:2px solid var(--line);padding-bottom:6px}
+.people{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;border-top:5px solid var(--c)}
+.card .ic{font-size:30px}
+.card h3{margin:2px 0 0;font-size:19px}
+.card .role{color:var(--muted);font-size:14px;margin:0 0 8px}
+.card p{margin:6px 0 0;font-size:15px}
+.tag{display:inline-block;font-size:12px;border-radius:999px;border:1px solid var(--line);padding:1px 9px;color:var(--muted);margin-top:8px}
+.pt{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin:14px 0}
+.pt h3{margin:0 0 4px;font-size:19px}
+.pt .meta{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}
+.badge{font-size:12px;padding:2px 10px;border-radius:999px;background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok);font-weight:600}
+.badge.n{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
+.pt ul{margin:6px 0 0 18px;padding:0}
+.pt li{margin:3px 0}
+.clash{border-left:4px solid var(--accent);padding:4px 12px;margin:10px 0;color:var(--muted);font-size:15px}
+code{background:color-mix(in srgb,var(--line) 55%,transparent);padding:1px 5px;border-radius:5px;font-size:.92em}
+.notes li{margin:6px 0}
+footer{margin-top:40px;color:var(--muted);font-size:14px;text-align:center}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>The Round Table</h1>
+  <p class="sub">Agent-team party · 2026-10-17 · seven gaps in <code>epics.md</code>, closed by qualified majority</p>
+  <svg class="table" width="460" height="300" viewBox="0 0 460 300" role="img" aria-label="Five agents seated around a round table">
+    <ellipse cx="230" cy="160" rx="150" ry="78" fill="var(--table)"/>
+    <ellipse cx="230" cy="154" rx="150" ry="78" fill="var(--tableh)"/>
+    <ellipse class="spark" cx="230" cy="154" rx="46" ry="20" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 6"/>
+    <text x="230" y="159" text-anchor="middle" font-size="13" fill="var(--bg)" font-weight="700">4 of 5</text>
+    <g class="seat"><circle cx="230" cy="42" r="26" fill="var(--c1)"/><text x="230" y="51" text-anchor="middle" font-size="26">🏗️</text><text x="230" y="22" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="700">Winston</text></g>
+    <g class="seat"><circle cx="396" cy="118" r="26" fill="var(--c2)"/><text x="396" y="127" text-anchor="middle" font-size="26">🎨</text><text x="396" y="88" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="700">Sally</text></g>
+    <g class="seat"><circle cx="338" cy="262" r="26" fill="var(--c3)"/><text x="338" y="271" text-anchor="middle" font-size="26">📋</text><text x="338" y="296" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="700">John</text></g>
+    <g class="seat"><circle cx="122" cy="262" r="26" fill="var(--c4)"/><text x="122" y="271" text-anchor="middle" font-size="26">💻</text><text x="122" y="296" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="700">Amelia</text></g>
+    <g class="seat"><circle cx="64" cy="118" r="26" fill="var(--c5)"/><text x="64" y="127" text-anchor="middle" font-size="26">🔒</text><text x="64" y="88" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="700">Vex</text></g>
+  </svg>
+  <div class="stats">
+    <div class="stat"><b>7</b><span>points closed</span></div>
+    <div class="stat"><b>5/5</b><span>consensus on each</span></div>
+    <div class="stat"><b>0</b><span>dissents recorded</span></div>
+    <div class="stat"><b>1</b><span>new story (3.9)</span></div>
+  </div>
+</header>
+
+<h2>Who sat at the table</h2>
+<div class="people">
+  <div class="card" style="--c:var(--c1)"><div class="ic">🏗️</div><h3>Winston</h3><p class="role">System Architect</p>
+    <p>Laid out the trade-offs before giving a verdict. Caught that a 5 s timeout on the whole download would kill a multi-MB index on a slow network: it had to be connect plus read.</p><span class="tag">netExecutor · timeouts</span></div>
+  <div class="card" style="--c:var(--c2)"><div class="ic">🎨</div><h3>Sally</h3><p class="role">UX Designer</p>
+    <p>Started against a left-handed setting, then yielded: one switch costs little and one-handed use is real value. Kept errors human and distinct from the security message.</p><span class="tag">UX-DR7 · UX-DR14</span></div>
+  <div class="card" style="--c:var(--c3)"><div class="ic">📋</div><h3>John</h3><p class="role">Product Manager</p>
+    <p>Asked the short, sharp questions: why implement it instead of downgrading it, and why a story instead of one more acceptance criterion. Kept Story 3.9 small.</p><span class="tag">scope · traceability</span></div>
+  <div class="card" style="--c:var(--c4)"><div class="ic">💻</div><h3>Amelia</h3><p class="role">Senior Software Engineer</p>
+    <p>Checked every claim against the files and the module rules. Refused a UI-foundation story with no user value, and put the executor where the dependency rules allow it: the <code>app</code> module.</p><span class="tag">implementability</span></div>
+  <div class="card" style="--c:var(--c5)"><div class="ic">🔒</div><h3>Vex</h3><p class="role">Security Engineer</p>
+    <p>Named the exploit path every time. A dormant <code>INTERNET</code> permission, an endless response body, a redirect to the wrong host, a link in an imported name: all closed in the criteria.</p><span class="tag">Rule zero · supply chain</span></div>
+</div>
+
+<h2>The seven points</h2>
+
+<section class="pt"><h3>1 · UX-DR3: theme, edge-to-edge, predictive back, own icons</h3>
+  <div class="meta"><span class="badge">5/5</span><span class="badge n">no new story</span></div>
+  <div class="clash">Winston opened with a dedicated foundation story. The other four said no: it delivers no user value.</div>
+  <ul><li>Story 2.1 gets the foundation: <code>Theme.DeviceDefault*</code>, no AndroidX/Material/Compose on the runtime classpath, insets, <code>enableOnBackInvokedCallback</code>, own vector icons.</li>
+  <li>Stories 3.4 and 3.5 only verify inheritance. Story 5.1 gates the icon set (about 30, no bitmaps).</li></ul></section>
+
+<section class="pt"><h3>2 · UX-DR12: custom views not named</h3>
+  <div class="meta"><span class="badge">5/5</span><span class="badge n">gap was wider</span></div>
+  <div class="clash">The room found that <code>TxIndicatorView</code> was missing too, not only the two reported views.</div>
+  <ul><li><code>TxIndicatorView</code> is created in 2.3, <code>IrKeyView</code> in 3.5, <code>RemoteCardView</code> and <code>FabView</code> in 3.4. Each class is born in the first story that uses it.</li>
+  <li>The announced error text never contains a blaster host or IP.</li></ul></section>
+
+<section class="pt"><h3>3 · UX-DR14: left-handed mode, haptics, 130% font scale</h3>
+  <div class="meta"><span class="badge">5/5</span><span class="badge n">kept in v1</span></div>
+  <div class="clash">Not in the PRD, only one line of the UX spec. Sally wanted audit-only; the cost of one switch won the room.</div>
+  <ul><li>Switch in Story 3.8; FAB and rockers mirror in 3.4 and 3.5; D-pad stays centered.</li>
+  <li><code>VIRTUAL_KEY</code> once per press, not on every repeat. Icons next to labels above 130%.</li></ul></section>
+
+<section class="pt"><h3>4 · AR11: manifest permissions</h3>
+  <div class="meta"><span class="badge">5/5</span><span class="badge n">no new story</span></div>
+  <div class="clash">Vex's rule: no dormant permission that a future dependency could exploit.</div>
+  <ul><li>Each permission is declared by the first story that uses it: <code>TRANSMIT_IR</code> in 2.3, <code>INTERNET</code> in 4.3, <code>ACCESS_LOCAL_NETWORK</code> in 6.5.</li>
+  <li>Story 1.2 adds a CI check of the merged manifest against an allowlist. Story 5.6 ties the release manifest and Data safety to it.</li></ul></section>
+
+<section class="pt"><h3>5 · AR10: network executor, timeouts, cancellation</h3>
+  <div class="meta"><span class="badge">5/5</span><span class="badge n">7 ACs in Story 4.3</span></div>
+  <div class="clash">Three people used the same proposal id for three different texts. The host renamed them and asked for one merge.</div>
+  <ul><li><code>netExecutor</code> (2 threads, bounded queue) created in <code>app</code> and injected; 5 s connect and read, not a total cap.</li>
+  <li>At most 3 https redirects on the allowlist; size cap; signature and SHA-256 before parsing; cancel deletes the partial file; nothing sensitive in logs; progress in MB with Cancel.</li></ul></section>
+
+<section class="pt"><h3>6 · UX-DR15: the "Code details" view</h3>
+  <div class="meta"><span class="badge">5/5</span><span class="badge n">new Story 3.9</span></div>
+  <div class="clash">Winston, John and Vex first leaned toward an AC in an existing story. Amelia and Sally argued it is a new screen (key list plus dialog), and John came round on one condition: keep it small. A story it was, deferrable if the budget tightens.</div>
+  <ul><li>Read-only, opened from the S5 overflow. A fixed allowlist of fields, plain text only, "Copy code" on explicit action.</li>
+  <li>The only place for technical terms, with a declared exception for the maker flows 2.2 and 3.3.</li></ul></section>
+
+<section class="pt"><h3>7 · UX-DR7: Add screen entries only in the empty state</h3>
+  <div class="meta"><span class="badge">5/5</span><span class="badge n">3 ACs in Story 4.4</span></div>
+  <ul><li>"Import from file" and "Enter code manually" are always visible in S3, in every state including loading and offline.</li>
+  <li>They open the existing 3.3 and 2.2 flows; the import keeps the same picker, parser and limits. No second validation path, no permission.</li></ul></section>
+
+<h2>How the room worked</h2>
+<ul class="notes">
+  <li>Five agents messaged each other directly; every message also reached the host. Qualified majority was 4 of 5, with a cap of 20 turns each. Nobody came close.</li>
+  <li>Real friction was about scope and value, never about the facts: every claim was checked against the spec, the PRD or <code>epics.md</code>.</li>
+  <li>Proposal ids collided three times (P5.2, P6.2, P6.3). The fix was renaming and asking for one merged text before any vote counted.</li>
+</ul>
+
+<footer>Decision log: <code>_bmad-output/party-mode/decisions-epics-gaps.md</code> · Applied in the commit "docs: apply party decisions for the 7 epics coverage gaps"</footer>
+</main>
+</body>
+</html>
