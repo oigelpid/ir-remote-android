@@ -432,3 +432,213 @@ So that timing errors are caught before any user sees them.
 **Given** the procedure
 **Then** it documents the receiver options (ESP with TSOP/VS1838, Flipper Zero, or a learning dongle) and the steps to reproduce.
 
+## Epic 3: My remotes: library, remote screen, import/export
+
+Users save, organize and use remotes: SQLite persistence, the Flipper `.ir` parser, import from a file, the Home screen (S2), the Remote screen (S5), repeat while a key is held, JSON backup and restore, and essential Settings (S6). Makers get value immediately from manual import. User value: a personal, offline library of working remotes that survives a phone change.
+
+### Story 3.1: Local library storage
+
+As a user,
+I want my remotes and their buttons stored on the phone,
+So that they are available at any time without a network.
+
+**Acceptance Criteria:**
+
+**Given** a fresh install
+**When** the library is first opened
+**Then** the tables `remote` and `button` exist, and no other tables are created by this story.
+
+**Given** a remote with buttons
+**When** it is saved and read back
+**Then** every field, including the favorite flag and the transmitter assignment, round-trips unchanged.
+
+**Given** any database access
+**Then** it runs on a dedicated single-thread executor (`dbExecutor`) and never on the main thread.
+
+**Given** a schema version change
+**When** the app is upgraded
+**Then** a versioned migration preserves existing remotes, and a migration test covers each version step.
+
+**Given** the library
+**Then** it works with no network permission being used (airplane mode).
+
+### Story 3.2: Flipper `.ir` parser
+
+As a maker,
+I want a safe parser for Flipper `.ir` files,
+So that I can import codes from the community database.
+
+**Acceptance Criteria:**
+
+**Given** a valid `.ir` file with parsed and raw signals
+**When** it is parsed
+**Then** the result is a list of named `IrCode` values matching the file.
+
+**Given** a file larger than 256 KB, with more than 500 signals, with more than 1024 durations in one signal, or with a duration outside 1 to 250000 µs
+**When** it is parsed
+**Then** it is rejected with a readable error.
+
+**Given** signal names containing markup or control characters
+**Then** they are kept as plain text and never interpreted.
+
+**Given** malformed or truncated input
+**When** it is parsed
+**Then** no exception escapes the module and the error states where the problem is.
+
+**Given** the test suite
+**Then** it includes parser fuzzing and a corpus test over a pinned snapshot of Flipper-IRDB with no crashes.
+
+### Story 3.3: Import a remote from a file
+
+As a maker,
+I want to import a remote from a file I choose,
+So that I can use codes I already have.
+
+**Acceptance Criteria:**
+
+**Given** the import action
+**When** I pick a file with the system file picker
+**Then** the app reads only that file and requests no storage permission.
+
+**Given** a Flipper `.ir`, a Pronto text file or a raw text file
+**When** it is read
+**Then** a preview lists the detected buttons and the format, before anything is saved.
+
+**Given** the preview
+**When** I confirm
+**Then** the remote is saved in the library and I can name it.
+
+**Given** an unreadable or invalid file
+**Then** the message gives the cause and a suggested action, with no stack trace.
+
+**Given** a single code to add
+**Then** the manual entry screen from Epic 2 can be opened from the import flow.
+
+### Story 3.4: Home screen
+
+As a user,
+I want a Home screen showing my remotes,
+So that I can open the one I need quickly.
+
+**Acceptance Criteria:**
+
+**Given** saved remotes
+**When** Home (S2) is shown
+**Then** they appear as cards in a two-column grid with favorites first.
+
+**Given** an empty library
+**Then** the empty state "Find your remote" is shown with the actions to add or import a remote.
+
+**Given** a card
+**When** I long-press it
+**Then** a menu offers rename, duplicate, change transmitter, export and delete.
+
+**Given** I delete a remote
+**Then** it disappears immediately and an undo action restores it for a limited time.
+
+**Given** a card tap
+**Then** it opens the Remote screen, or a placeholder until Story 3.5 is delivered.
+
+**Given** airplane mode
+**Then** Home works fully.
+
+**Given** the screen
+**Then** it meets the token, 48 dp, spoken-description and EN/IT string criteria.
+
+### Story 3.5: Remote screen
+
+As a user,
+I want a remote screen that sends the commands of my device,
+So that I can control it like a physical remote.
+
+**Acceptance Criteria:**
+
+**Given** a saved remote
+**When** the Remote screen (S5) opens
+**Then** keys are laid out by role (Power/Input/Mute row, D-pad, Volume and Channel rockers, collapsible keypad, scrollable extras)
+**And** only keys present in the saved code are shown.
+
+**Given** a key
+**When** I tap it
+**Then** the signal is sent through the active transmitter, with a short vibration if enabled and the IR indicator shown.
+
+**Given** a transmitter error
+**Then** the message gives the cause and an action, and the indicator turns to the error color.
+
+**Given** the custom views `IrKeyView`, `DpadView` and `RockerView`
+**Then** each exposes spoken descriptions and virtual nodes for TalkBack (five for the D-pad, two for the rocker)
+**And** every target is at least 48 dp (56 dp for main keys).
+
+**Given** the screen
+**Then** it supports light, dark and system themes and EN/IT strings.
+
+### Story 3.6: Repeat while a key is held
+
+As a user,
+I want volume and channel keys to repeat while I hold them,
+So that I can adjust quickly like on a real remote.
+
+**Acceptance Criteria:**
+
+**Given** a repeatable key
+**When** I hold it
+**Then** the first signal is sent at once and repeats start after 300 ms, then every about 110 ms.
+
+**Given** a NEC signal
+**When** repeating
+**Then** the NEC repeat code is sent instead of the full frame.
+
+**Given** an RC5 or RC6 signal
+**Then** the toggle bit is held by `TransmitService`, stays constant for the repeats of one press and flips on the next press.
+
+**Given** I release the key
+**Then** repeating stops within one repeat interval, and a lifecycle change (screen off, app in background) also stops it.
+
+**Given** a long-press accessibility action
+**Then** repeat is also available as a spoken action for TalkBack.
+
+### Story 3.7: JSON backup and restore
+
+As a user,
+I want to export and restore my library,
+So that I do not lose my remotes when I change phone.
+
+**Acceptance Criteria:**
+
+**Given** the export action
+**When** I choose a location with the system file picker
+**Then** a versioned JSON backup of remotes and buttons is written there.
+
+**Given** a backup file
+**When** I restore it
+**Then** remotes are added without overwriting existing ones silently, and I see a summary of what was restored.
+
+**Given** a backup with an unknown or newer version, or invalid content
+**Then** it is rejected with a readable error and the library is unchanged.
+
+**Given** system backup rules
+**Then** `dataExtractionRules` include only `remote` and `button` data and never transmitter credentials or session keys.
+
+**Given** the test suite
+**Then** a round trip export, restore, compare passes for the current and the previous backup version.
+
+### Story 3.8: Essential Settings
+
+As a user,
+I want a Settings screen for the basics,
+So that the app behaves the way I prefer.
+
+**Acceptance Criteria:**
+
+**Given** Settings (S6)
+**Then** it offers theme (light, dark, system), vibration, Power confirmation (off by default), language and links to backup and restore.
+
+**Given** the information section
+**Then** it shows the version, the GPL license, the privacy statement (no analytics, no tracking), and links to the source and the SBOM.
+
+**Given** a setting change
+**Then** it applies immediately and persists across restarts.
+
+**Given** the screen
+**Then** it meets the token, 48 dp, spoken-description and EN/IT string criteria.
+
