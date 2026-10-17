@@ -99,54 +99,58 @@ UX-DR15: Plain-language principle: devices not protocols (technical terms only i
 
 ### FR Coverage Map
 
-FR1: Epic 1 - Detect transmitters and frequencies (S1 Welcome)
-FR2: Epic 1 - Transmit a validated raw code from the built-in transmitter
+FR1: Epic 2 - Detect transmitters and frequencies (S1 Welcome)
+FR2: Epic 2 - Transmit a validated raw code from the built-in transmitter
 FR3: Epic 1 - P0 protocol encoders with sourced test vectors
 FR4: Epic 1 - Pronto hex <-> raw round trip
-FR5: Epic 3 - Search by type and brand on the signed Flipper-IRDB index
-FR6: Epic 3 - Guided trial of candidates
-FR7: Epic 2 - Local library with favorites, offline
-FR8: Epic 2 - Repeat while a key is held (repeat frames, toggle bit)
-FR9: Epic 2 - Import Flipper `.ir`/Pronto/raw and JSON export/backup (the Flipper parser itself is built in Epic 2 and reused by Epic 3)
-FR10: Epic 6 - Second source irdb with attribution
-FR11: Epic 5 - Audio jack transmitter
-FR12: Epic 5 - Tiqiaa and ElkSmart USB dongles
-FR13: Epic 5 - Tasmota, ESPHome, Broadlink network blasters
-FR14: Epic 6 - Air conditioner with persisted state
-FR15: Epic 6 - Widget and quick settings tile
-FR16: Epic 7 - Code learning
-FR17: Epic 7 - Layout editor
-FR18: Epic 7 - Contribution to Flipper-IRDB
+FR5: Epic 4 - Search by type and brand on the signed Flipper-IRDB index
+FR6: Epic 4 - Guided trial of candidates
+FR7: Epic 3 - Local library with favorites, offline
+FR8: Epic 3 - Repeat while a key is held (repeat frames, toggle bit)
+FR9: Epic 3 - Import Flipper `.ir`/Pronto/raw and JSON export/backup (the Flipper parser itself is built in Epic 3 and reused by Epic 4)
+FR10: Epic 7 - Second source irdb with attribution
+FR11: Epic 6 - Audio jack transmitter
+FR12: Epic 6 - Tiqiaa and ElkSmart USB dongles
+FR13: Epic 6 - Tasmota, ESPHome, Broadlink network blasters
+FR14: Epic 7 - Air conditioner with persisted state
+FR15: Epic 7 - Widget and quick settings tile
+FR16: Epic 8 - Code learning
+FR17: Epic 8 - Layout editor
+FR18: Epic 8 - Contribution to Flipper-IRDB
 
-NFR coverage: NFR1 and NFR2 are enforced from Epic 1 (CI, dependency verification, privacy rules); NFR5 budgets (APK size, latency) are checked from Epic 1; NFR3, NFR4 and the final NFR5 audits (TalkBack, 200% text, IT/EN) close in Epic 4. Every UI story carries its own accessibility, token and string acceptance criteria (project rule 8).
+NFR coverage: NFR1 and NFR2 are enforced from Epic 1 (CI, dependency verification, privacy rules); NFR5 budgets (APK size, latency) are checked from Epic 1 and on device in Epic 2; NFR3, NFR4 and the final NFR5 audits (TalkBack, 200% text, IT/EN) close in Epic 5. Every UI story carries its own accessibility, token and string acceptance criteria (project rule 8).
 
 ## Epic List
 
-### Epic 1: Send an IR code from the phone
-Foundations and first transmission: multi-module Gradle build with CI and dependency verification, `ir-core` model and P0 protocol encoders (four family stories), Pronto <-> raw, built-in transmitter with signal validation, S1 Welcome, an on-device bench test against an ESP receiver and an APK size budget check in CI. Exit: green vector tests on all P0 protocols (M0).
-**FRs covered:** FR1, FR2, FR3, FR4
+### Epic 1: IR engine and verified build
+Foundations that make every later epic safe: multi-module Gradle build with dependency verification, CI with supply chain checks and an APK size budget, the `ir-core` signal model with validation, Pronto <-> raw, and the P0 protocol encoders in four family stories with sourced vectors. Pure JVM, no phone needed. Exit: green vector tests on all P0 protocols (M0, first half).
+**FRs covered:** FR3, FR4
 
-### Epic 2: My remotes: library, remote screen, import/export
+### Epic 2: First transmission on the phone
+The engine meets real hardware: S1 Welcome with transmitter detection, sending a validated raw code from the built-in transmitter, and an on-device bench test against a receiver. Exit: measured timings match expectations on a real device (M0, second half).
+**FRs covered:** FR1, FR2
+
+### Epic 3: My remotes: library, remote screen, import/export
 Users save, organize and use remotes: SQLite persistence, Home (S2), Remote (S5) with repeat while held, Flipper `.ir`/Pronto/raw import, JSON backup/restore, essential Settings (S6). Makers get value immediately from manual import.
 **FRs covered:** FR7, FR8, FR9
 
-### Epic 3: Find my remote from the catalog
+### Epic 4: Find my remote from the catalog
 Users find a working code without knowing protocols: catalog pipeline and signed index (first story, with user-side prerequisites: `ir-index` repo and offline signing key created by the user, never in the sandbox), FTS4 search by type and brand (S3), guided trial (S4) saving into the library. Exit: 5 users find their TV without help (M1).
 **FRs covered:** FR5, FR6
 
-### Epic 4: Release v1.0 (Play + F-Droid)
+### Epic 5: Release v1.0 (Play + F-Droid)
 Verification and release only; accessibility, tokens and strings are acceptance criteria of every UI story. Covers the TalkBack and 200% text audit, IT/EN completeness, reproducible build, SBOM, Data safety, quality thresholds. Exit: Data safety approved, reproducible build verified (M2).
 **FRs covered:** none new (NFR3, NFR4, NFR5)
 
-### Epic 5: External transmitters (v1.1)
+### Epic 6: External transmitters (v1.1)
 Users without a built-in emitter can still send codes: one independent, separately shippable story per transmitter (audio jack, USB Tiqiaa/ElkSmart, Tasmota, ESPHome, Broadlink) plus the S7 Transmitters screen. USB and Broadlink stories require real hardware to verify.
 **FRs covered:** FR11, FR12, FR13
 
-### Epic 6: Air conditioners, widget and second source (v1.1)
+### Epic 7: Air conditioners, widget and second source (v1.1)
 Air conditioner remotes with persisted state, home-screen widget and quick settings tile, irdb as a second catalog source with attribution and notification issue.
 **FRs covered:** FR14, FR15, FR10
 
-### Epic 7: Power-user tools (P2)
+### Epic 8: Power-user tools (P2)
 Code learning, layout editor and contribution of codes upstream to Flipper-IRDB.
 **FRs covered:** FR16, FR17, FR18
 
